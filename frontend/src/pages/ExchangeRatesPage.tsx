@@ -1,10 +1,34 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStockStore } from '../store/stockStore';
 import StockTable from '../components/StockTable';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { ExchangeRate } from '../types';
 
 const ExchangeRatesPage: React.FC = () => {
   const { marketData, isLoading, error, fetchMarketData } = useStockStore();
+  const [baseCurrency, setBaseCurrency] = useState<'USD' | 'local'>('USD');
+
+  // Process exchange rates based on selected base currency
+  const processedRates = useMemo(() => {
+    if (!marketData) return [];
+    
+    if (baseCurrency === 'USD') {
+      return marketData.exchangeRates;
+    }
+    
+    // Convert rates to show 1 unit of local currency in USD
+    return marketData.exchangeRates.map(rate => ({
+      ...rate,
+      currentRate: rate.currentRate !== 0 ? 1 / rate.currentRate : 0,
+      openingRate: rate.openingRate !== 0 ? 1 / rate.openingRate : 0,
+      closingRate: rate.closingRate !== 0 ? 1 / rate.closingRate : 0,
+      dayHigh: rate.dayLow !== 0 ? 1 / rate.dayLow : 0,
+      dayLow: rate.dayHigh !== 0 ? 1 / rate.dayHigh : 0,
+      variation: -rate.variation, // Invert the variation when flipping the rate
+      pair: rate.pair.split('/').reverse().join('/'),
+      name: rate.name.split(' / ').reverse().join(' / ')
+    }));
+  }, [marketData, baseCurrency]);
 
   useEffect(() => {
     if (!marketData) {
@@ -12,6 +36,11 @@ const ExchangeRatesPage: React.FC = () => {
     }
   }, [marketData, fetchMarketData]);
 
+  const toggleBaseCurrency = () => {
+    setBaseCurrency(prev => prev === 'USD' ? 'local' : 'USD');
+  };
+
+  // Handle loading state
   if (isLoading && !marketData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -20,7 +49,8 @@ const ExchangeRatesPage: React.FC = () => {
     );
   }
 
-  if (error && !marketData) {
+  // Handle error state
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -28,7 +58,7 @@ const ExchangeRatesPage: React.FC = () => {
           <p className="text-gray-600 mb-4">{error}</p>
           <button
             onClick={fetchMarketData}
-            className="btn-primary"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Reintentar
           </button>
@@ -37,7 +67,10 @@ const ExchangeRatesPage: React.FC = () => {
     );
   }
 
-  if (!marketData) return null;
+  // Handle no data state
+  if (!marketData) {
+    return null;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -52,6 +85,22 @@ const ExchangeRatesPage: React.FC = () => {
             <p className="text-gray-600">
               Monedas principales y sus fluctuaciones en tiempo real
             </p>
+          </div>
+          <div className="ml-auto flex items-center space-x-2">
+            <span className="text-sm font-medium text-gray-700">USD</span>
+            <button
+              onClick={toggleBaseCurrency}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                baseCurrency === 'local' ? 'bg-blue-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                  baseCurrency === 'local' ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className="text-sm font-medium text-gray-700">Local</span>
           </div>
         </div>
         
@@ -95,9 +144,10 @@ const ExchangeRatesPage: React.FC = () => {
 
       {/* Tabla de tipos de cambio */}
       <StockTable
-        data={marketData.exchangeRates}
+        data={processedRates}
         type="exchange"
         isLoading={isLoading}
+        baseCurrency={baseCurrency}
       />
 
       {/* Información adicional */}
@@ -110,7 +160,7 @@ const ExchangeRatesPage: React.FC = () => {
             {marketData.exchangeRates
               .sort((a, b) => Math.abs(b.variation) - Math.abs(a.variation))
               .slice(0, 3)
-              .map((rate, index) => (
+              .map((rate: ExchangeRate) => (
                 <div key={rate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="text-sm font-medium text-gray-900">
@@ -138,7 +188,7 @@ const ExchangeRatesPage: React.FC = () => {
             {marketData.exchangeRates
               .sort((a, b) => b.volume - a.volume)
               .slice(0, 3)
-              .map((rate, index) => (
+              .map((rate: ExchangeRate) => (
                 <div key={rate.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="text-sm font-medium text-gray-900">

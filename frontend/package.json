@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.38.4",
     "@types/node": "^16.18.68",
     "@types/react": "^18.2.42",

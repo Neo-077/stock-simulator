@@ -10,10 +10,20 @@
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build"
   },
-  "keywords": ["stock", "simulator", "react", "typescript", "node"],
+  "keywords": [
+    "stock",
+    "simulator",
+    "react",
+    "typescript",
+    "node"
+  ],
   "author": "Stock Simulator Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^1.0.6"
   }
 }

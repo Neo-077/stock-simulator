@@ -6,9 +6,10 @@ interface StockTableProps {
   data: Stock[] | ExchangeRate[];
   type: 'stock' | 'exchange';
   isLoading?: boolean;
+  baseCurrency?: 'USD' | 'local';
 }
 
-const StockTable: React.FC<StockTableProps> = ({ data, type, isLoading = false }) => {
+const StockTable: React.FC<StockTableProps> = ({ data, type, isLoading = false, baseCurrency = 'USD' }) => {
   const navigate = useNavigate();
 
   const handleRowClick = (item: Stock | ExchangeRate) => {
@@ -18,9 +19,14 @@ const StockTable: React.FC<StockTableProps> = ({ data, type, isLoading = false }
     // Para exchange rates, podríamos crear una página de detalle específica si es necesario
   };
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number, pair?: string) => {
     if (type === 'exchange') {
-      return price.toFixed(4);
+      const formattedPrice = price.toFixed(4);
+      if (baseCurrency === 'local' && pair) {
+        const [from, to] = pair.split('/');
+        return `1 ${from} = ${formattedPrice} ${to}`;
+      }
+      return formattedPrice;
     }
     return price.toFixed(2);
   };
@@ -138,11 +144,6 @@ const StockTable: React.FC<StockTableProps> = ({ data, type, isLoading = false }
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="text-sm text-gray-900">
                         {(item as Stock).volume.toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="text-sm text-gray-900">
-                        ${((item as Stock).marketCap / 1e9).toFixed(1)}B
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
